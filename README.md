@@ -6,8 +6,6 @@
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-blue)](https://sleepingbomb.github.io/MONTE_CARLO_TREE_SEARCH/)
 [![ASU](https://img.shields.io/badge/ASU-EEE598-maroon)](https://www.asu.edu/)
 
-![MCTS Preview](assets/preview.png)
-
 ## 📖 Overview
 
 This repository contains the research website for **Team 14's** final project on Monte Carlo Tree Search (MCTS) integrated with Deep Reinforcement Learning (DRL) for robotic navigation applications.
