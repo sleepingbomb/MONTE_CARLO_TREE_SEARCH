@@ -126,8 +126,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Arizona State University
 - School of Electrical, Computer, and Energy Engineering
-- EEE598 Course Staff
-
+  
 ---
 
 <p align="center">
