@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Monte Carlo Tree Search (MCTS) integrated with Deep Reinforcement Learning for robotic navigation. Research by Team 14, Arizona State University.">
+    <meta name="keywords" content="MCTS, Monte Carlo Tree Search, Deep Reinforcement Learning, DRL, Robotics, Navigation, AI, Machine Learning">
+    <meta name="author" content="Sakshi Lathi, Abhijit Sinha, Anusha Chatterjee">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="Monte Carlo Tree Search | MCTS-DRL Research">
+    <meta property="og:description" content="A heuristic search algorithm for complex decision-making through iterative randomized exploration, integrated with Deep Reinforcement Learning.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/og-image.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    
+    <title>Monte Carlo Tree Search | MCTS-DRL Research</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">MCTS</div>
+        <button class="mobile-menu-btn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <ul class="nav-links">
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#stages">Algorithm</a></li>
+            <li><a href="#applications">Applications</a></li>
+            <li><a href="#results">Results</a></li>
+            <li><a href="#report">Report</a></li>
+            <li><a href="#download">PDF</a></li>
+            <li><a href="#team">Team</a></li>
+            <li><a href="https://github.com/sleepingbomb/MONTE_CARLO_TREE_SEARCH" class="github-link" target="_blank" rel="noopener noreferrer">
+                <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+            </a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>
+                    <span>Monte Carlo</span>
+                    <span class="highlight">Tree Search</span>
+                </h1>
+                <p class="hero-subtitle">
+                    A heuristic search algorithm for complex decision-making through iterative randomized exploration, integrated with Deep Reinforcement Learning for advanced robotic navigation.
+                </p>
+                <div class="hero-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Course</span>
+                        <span class="meta-value">EEE598, Fall 2024</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Team</span>
+                        <span class="meta-value">Team 14</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Institution</span>
+                        <span class="meta-value">Arizona State University</span>
+                    </div>
+                </div>
+                <div class="cta-buttons">
+                    <a href="#stages" class="btn btn-primary">Explore Algorithm</a>
+                    <a href="#report" class="btn btn-secondary">Read Report</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="tree-container">
+                    <svg class="tree-svg" viewBox="0 0 400 400">
+                        <!-- Tree lines -->
+                        <line x1="200" y1="50" x2="100" y2="120" stroke="rgba(0,240,255,0.3)" stroke-width="2"/>
+                        <line x1="200" y1="50" x2="300" y2="120" stroke="rgba(0,240,255,0.3)" stroke-width="2"/>
+                        <line x1="100" y1="120" x2="50" y2="200" stroke="rgba(0,240,255,0.3)" stroke-width="2"/>
+                        <line x1="100" y1="120" x2="150" y2="200" stroke="rgba(0,240,255,0.3)" stroke-width="2"/>
+                        <line x1="300" y1="120" x2="250" y2="200" stroke="rgba(0,240,255,0.3)" stroke-width="2"/>
+                        <line x1="300" y1="120" x2="350" y2="200" stroke="rgba(0,240,255,0.3)" stroke-width="2"/>
+                        <line x1="50" y1="200" x2="25" y2="280" stroke="rgba(0,240,255,0.2)" stroke-width="2"/>
+                        <line x1="50" y1="200" x2="75" y2="280" stroke="rgba(0,240,255,0.2)" stroke-width="2"/>
+                        <line x1="150" y1="200" x2="125" y2="280" stroke="rgba(0,240,255,0.2)" stroke-width="2"/>
+                        <line x1="150" y1="200" x2="175" y2="280" stroke="rgba(0,240,255,0.2)" stroke-width="2"/>
+                        <line x1="250" y1="200" x2="225" y2="280" stroke="rgba(0,240,255,0.2)" stroke-width="2"/>
+                        <line x1="250" y1="200" x2="275" y2="280" stroke="rgba(0,240,255,0.2)" stroke-width="2"/>
+                        <line x1="350" y1="200" x2="325" y2="280" stroke="rgba(0,240,255,0.2)" stroke-width="2"/>
+                        <line x1="350" y1="200" x2="375" y2="280" stroke="rgba(0,240,255,0.2)" stroke-width="2"/>
+                    </svg>
+                    <div class="tree-node root"></div>
+                    <div class="tree-node level1-1"></div>
+                    <div class="tree-node level1-2"></div>
+                    <div class="tree-node level2-1"></div>
+                    <div class="tree-node level2-2"></div>
+                    <div class="tree-node level2-3"></div>
+                    <div class="tree-node level2-4"></div>
+                    <div class="tree-node level3-1"></div>
+                    <div class="tree-node level3-2"></div>
+                    <div class="tree-node level3-3 best"></div>
+                    <div class="tree-node level3-4"></div>
+                    <div class="tree-node level3-5"></div>
+                    <div class="tree-node level3-6"></div>
+                    <div class="tree-node level3-7"></div>
+                    <div class="tree-node level3-8"></div>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span>Scroll</span>
+            <div class="scroll-arrow"></div>
+        </div>
+    </section>
+
+    <!-- Overview Section -->
+    <section id="overview" class="overview">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Overview</div>
+                <h2 class="section-title">Solving Complex Decision-Making Problems Through Intelligent Exploration</h2>
+            </div>
+            <div class="overview-grid">
+                <div class="overview-card fade-in">
+                    <div class="card-icon">🤖</div>
+                    <h3 class="card-title">Human-Robot Interaction</h3>
+                    <p class="card-text">
+                        Enabling robots to follow human targets from ahead while maintaining safe distances and avoiding obstacles in dynamic environments.
+                    </p>
+                </div>
+                <div class="overview-card fade-in">
+                    <div class="card-icon">🎯</div>
+                    <h3 class="card-title">Predictive Navigation</h3>
+                    <p class="card-text">
+                        Anticipating human movements and navigating around obstacles through stochastic sampling to forecast optimal strategies based on expected future rewards.
+                    </p>
+                </div>
+                <div class="overview-card fade-in">
+                    <div class="card-icon">🧠</div>
+                    <h3 class="card-title">DRL Integration</h3>
+                    <p class="card-text">
+                        Combining MCTS with Deep Reinforcement Learning to generate reliable navigational goals while tracking human targets in uncertain environments.
+                    </p>
+                </div>
+                <div class="overview-card fade-in">
+                    <div class="card-icon">⚡</div>
+                    <h3 class="card-title">Real-Time Adaptation</h3>
+                    <p class="card-text">
+                        Making high-level decisions and efficiently exploring decision spaces by focusing on promising paths while avoiding collisions and occlusions.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Algorithm Stages Section -->
+    <section id="stages">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Algorithm</div>
+                <h2 class="section-title">The Four Stages of Monte Carlo Tree Search</h2>
+            </div>
+            <div class="stages-timeline">
+                <div class="stage-item fade-in">
+                    <div class="stage-number">1</div>
+                    <div class="stage-content">
+                        <h3>Selection</h3>
+                        <p>Beginning at the root node, the algorithm traverses the tree using the Upper Confidence Bound (UCT) formula. This guides the search toward promising branches, balancing exploration of new paths with exploitation of known high-reward routes.</p>
+                    </div>
+                    <div class="stage-visual">
+                        <div class="stage-diagram">
+                            <pre>
+    ●──────┐
+    │      │
+    ●      ●  ← UCT Selection
+    │
+    ▼
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="stage-item fade-in">
+                    <div class="stage-number">2</div>
+                    <div class="stage-content">
+                        <h3>Expansion</h3>
+                        <p>New child nodes are added to represent potential future states and unexplored actions. This expands the search tree by simulating possible outcomes from the current decision point.</p>
+                    </div>
+                    <div class="stage-visual">
+                        <div class="stage-diagram">
+                            <pre>
+         ●
+        /│\
+       ● ● ●  ← New Nodes
+      / \
+     ●   ●
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="stage-item fade-in">
+                    <div class="stage-number">3</div>
+                    <div class="stage-content">
+                        <h3>Simulation</h3>
+                        <p>Each node undergoes a play-out or rollout to estimate future rewards. Models like SL-MCTS utilize neural networks to improve predictions and guide simulations toward more realistic outcomes.</p>
+                    </div>
+                    <div class="stage-visual">
+                        <div class="stage-diagram">
+                            <pre>
+    ●
+    │
+    ↓ Rollout
+    ↓ ↓ ↓
+   [R = +1]
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="stage-item fade-in">
+                    <div class="stage-number">4</div>
+                    <div class="stage-content">
+                        <h3>Backpropagation</h3>
+                        <p>Rewards from simulations update node statistics along the selected path. This enhances future path choices by favoring high-reward routes and continuously improving the decision tree.</p>
+                    </div>
+                    <div class="stage-visual">
+                        <div class="stage-diagram">
+                            <pre>
+    ● ←──────┐
+    │        │
+    ●        │ Update
+    │        │
+    ●────────┘
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- UCB Formula Section -->
+    <section class="formula-section">
+        <div class="container">
+            <div class="section-header center">
+                <div class="section-label center">Core Formula</div>
+                <h2 class="section-title center">Upper Confidence Bound (UCB)</h2>
+            </div>
+            <div class="formula-box fade-in">
+                <div class="formula">
+                    UCB = w/n<sup>c</sup> + c × √(ln n<sup>p</sup> / n<sup>c</sup>)
+                </div>
+                <div class="formula-legend">
+                    <div class="legend-item">
+                        <span class="legend-symbol">w</span>
+                        <span class="legend-desc">Value of the leaf node after a rollout (expected reward)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-symbol">n<sup>c</sup></span>
+                        <span class="legend-desc">Number of times the node has been visited</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-symbol">n<sup>p</sup></span>
+                        <span class="legend-desc">Number of times the parent node has been visited</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-symbol">c</span>
+                        <span class="legend-desc">Exploration parameter (typically set to √2 or 1.4)</span>
+                    </div>
+                </div>
+            </div>
+            <p class="formula-description">
+                This formula balances exploration and exploitation—the first term favors nodes with high rewards (exploitation), while the second term encourages visiting less-explored nodes (exploration).
+            </p>
+        </div>
+    </section>
+
+    <!-- Applications Section -->
+    <section id="applications">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Applications</div>
+                <h2 class="section-title">Real-World MCTS-DRL Implementations</h2>
+            </div>
+            <div class="app-grid">
+                <div class="app-card featured fade-in">
+                    <div class="app-content">
+                        <div class="app-icon">🦾</div>
+                        <h3 class="app-title">Tesla's Optimus Robot</h3>
+                        <p class="app-desc">
+                            Tesla's humanoid robot leverages MCTS for decision-making in dynamic, multitask settings. MCTS helps Optimus simulate grip forms, prioritize safety, and adapt paths with real-time feedback while handling tasks alongside humans.
+                        </p>
+                        <div class="app-features">
+                            <span class="feature-item">Dynamic real-world task handling</span>
+                            <span class="feature-item">Enhanced navigational capabilities</span>
+                            <span class="feature-item">Real-time scenario simulation</span>
+                            <span class="feature-item">Adaptive decision-making for safety</span>
+                        </div>
+                    </div>
+                    <div class="app-visual">
+                        <div class="robot-placeholder">
+                            <span>🤖</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="app-card fade-in">
+                    <div class="app-icon">🏭</div>
+                    <h3 class="app-title">Multi-Agent Pathfinding</h3>
+                    <p class="app-desc">
+                        Multiple agents navigating grids without colliding—commonly seen in robotics and automated warehouses where coordination is critical.
+                    </p>
+                </div>
+                <div class="app-card fade-in">
+                    <div class="app-icon">🦿</div>
+                    <h3 class="app-title">Wearable Exoskeletons</h3>
+                    <p class="app-desc">
+                        In rehabilitation exoskeletons, MCTS adjusts support according to patient feedback in real-time, optimizing gait assistance and personalizing therapy.
+                    </p>
+                </div>
+                <div class="app-card fade-in">
+                    <div class="app-icon">🚗</div>
+                    <h3 class="app-title">Robot Path Planning</h3>
+                    <p class="app-desc">
+                        Guaranteeing robots travel efficiently in changing, unknown environments while dynamically bypassing barriers and obstacles.
+                    </p>
+                </div>
+                <div class="app-card fade-in">
+                    <div class="app-icon">🤝</div>
+                    <h3 class="app-title">Human-Robot Collaboration</h3>
+                    <p class="app-desc">
+                        Integrating robots into dynamic interactions with humans and other agents, increasing safety and boosting task completion rates.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results" class="results">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Results</div>
+                <h2 class="section-title">Performance Comparison: MCTS-DRL vs Standalone Methods</h2>
+            </div>
+            <div class="results-grid">
+                <div class="result-stat fade-in">
+                    <div class="stat-value">92%</div>
+                    <div class="stat-label">SL-MCTS Success Rate</div>
+                </div>
+                <div class="result-stat fade-in">
+                    <div class="stat-value">1.3s</div>
+                    <div class="stat-label">Computation Time</div>
+                </div>
+                <div class="result-stat fade-in">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Avg Path Length (steps)</div>
+                </div>
+            </div>
+            
+            <div class="table-wrapper fade-in">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Methodology</th>
+                            <th>Trajectory Accuracy</th>
+                            <th>Obstacle Avoidance</th>
+                            <th>Occlusion Handling</th>
+                            <th>Mean Reward</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>DRL Only</td>
+                            <td>Moderate</td>
+                            <td>Limited</td>
+                            <td>Poor</td>
+                            <td>-18.4</td>
+                        </tr>
+                        <tr>
+                            <td>MCTS Only</td>
+                            <td>Inconsistent</td>
+                            <td>Moderate</td>
+                            <td>Moderate</td>
+                            <td>3.2 ± 5.9</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td>MCTS-DRL Hybrid</td>
+                            <td>Excellent</td>
+                            <td>High</td>
+                            <td>High</td>
+                            <td>5.4</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Implementation Section -->
+    <section class="implementation">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Implementation</div>
+                <h2 class="section-title">MCTS-DRL Algorithm Pseudocode</h2>
+            </div>
+            <div class="code-block fade-in">
+                <div class="code-header">
+                    <span class="code-dot red"></span>
+                    <span class="code-dot yellow"></span>
+                    <span class="code-dot green"></span>
+                    <span class="code-filename">mcts_drl.py</span>
+                </div>
+                <pre class="code-content"><code><span class="keyword">function</span> <span class="function">MCTS_DRL</span>(robot_pose, human_trajectory, occupancy_map):
+    <span class="comment"># Initialize parent node with robot state and human positions</span>
+    parent_node = (robot_pose, human_trajectory[0])
+    
+    <span class="keyword">for</span> i <span class="keyword">in</span> range(num_of_expansion):
+        <span class="keyword">while</span> parent_node <span class="keyword">is not</span> fully_expanded:
+            child = <span class="function">simulate</span>(parent_node, action)
+            
+            <span class="keyword">if</span> <span class="keyword">no</span> collision:
+                <span class="keyword">if</span> <span class="keyword">no</span> occlusion:
+                    R = <span class="function">Q</span>(observation, action)  <span class="comment"># DRL reward estimation</span>
+                    child.state = <span class="function">simulate_state</span>(action)
+                <span class="keyword">else</span>:
+                    child.value = -1  <span class="comment"># Penalize occlusion</span>
+                
+                parent.value += child.value
+            <span class="keyword">else</span>:
+                <span class="function">delete</span>(child)  <span class="comment"># Remove collision paths</span>
+        
+        parent_node = <span class="function">select_leaf_node</span>(highest_UCB)
+    
+    <span class="keyword">return</span> <span class="function">goal_point</span>(leaf_node, UCB, c=0)  <span class="comment"># Best exploitation path</span></code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Report Section -->
+    <section id="report" class="report-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Full Report</div>
+                <h2 class="section-title">Research Paper: MCTS-DRL for Robotic Navigation</h2>
+            </div>
+            
+            <nav class="report-nav">
+                <a href="#abstract" class="report-nav-item active">Abstract</a>
+                <a href="#introduction" class="report-nav-item">Introduction</a>
+                <a href="#methodology" class="report-nav-item">Methodology</a>
+                <a href="#experiments" class="report-nav-item">Experiments</a>
+                <a href="#conclusion" class="report-nav-item">Conclusion</a>
+                <a href="#references" class="report-nav-item">References</a>
+            </nav>
+
+            <div class="report-content">
+                <article id="abstract" class="report-article fade-in">
+                    <div class="article-header">
+                        <span class="article-number">00</span>
+                        <h3>Abstract</h3>
+                    </div>
+                    <div class="article-body">
+                        <p>Monte Carlo Tree Search (MCTS) is a heuristic search algorithm renowned for resolving complex decision-making problems through iterative randomized exploration, prominently utilized in game-playing AI and sequential decision-making tasks.</p>
+                        <p>In this paper, we delve into the fundamental structure of MCTS and its applications in robotics and wearable exoskeletons, focusing particularly on robotic follow-ahead scenarios that require obstacle and occlusion avoidance. By integrating MCTS with Deep Reinforcement Learning (DRL), we propose a novel methodology enabling robots to make high-level decisions and generate reliable navigational goals while tracking a human target in uncertain environments.</p>
+                        <p>We analyze the balance between exploration and exploitation within MCTS, its predictive capabilities, and how these features amplify adaptive decision-making and support efficient pathfinding. Case studies and implementation examples, including Tesla's Optimus robot, are presented to illustrate MCTS's effectiveness in real-world applications.</p>
+                        <div class="keywords">
+                            <span class="keyword-label">Index Terms:</span>
+                            <span class="keyword-tag">MCTS-DRL</span>
+                            <span class="keyword-tag">Exoskeleton</span>
+                            <span class="keyword-tag">Tesla Optimus Robot</span>
+                            <span class="keyword-tag">SL-MCTS</span>
+                            <span class="keyword-tag">MCTS</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article id="introduction" class="report-article fade-in">
+                    <div class="article-header">
+                        <span class="article-number">01</span>
+                        <h3>Introduction</h3>
+                    </div>
+                    <div class="article-body">
+                        <p>Human-robot interaction is a rapidly advancing field with applications ranging from autonomous vehicles to assistive robotics. A particularly challenging task within this domain is enabling a robot to follow a human target from ahead, maintaining a safe distance while avoiding obstacles and occlusions.</p>
+                        <p>Traditional methods often struggle with the complexities of predicting human intentions and navigating dynamic environments characterized by uncertainty. Monte Carlo Tree Search (MCTS) is a highly regarded algorithm known for its effectiveness in decision-making under uncertainty.</p>
+                        <p>Initially applied in artificial intelligence for playing board games, MCTS has evolved into a versatile tool extensively utilized in robotics and the optimization of multi-agent systems. Its mechanism relies on stochastic sampling to forecast optimal strategies based on expected future rewards.</p>
+                        
+                        <div class="info-box">
+                            <h4>The MCTS Process</h4>
+                            <p>The MCTS process comprises four fundamental stages: <strong>Selection</strong>, <strong>Expansion</strong>, <strong>Simulation</strong>, and <strong>Backpropagation</strong>, each contributing to the growth and adaptability of the search tree over time.</p>
+                        </div>
+
+                        <p>In this paper, we explore how integrating MCTS with Deep Reinforcement Learning (DRL) offers a promising solution to the challenges of robotic follow-ahead applications. By combining the robust decision-making capabilities of MCTS with the learning efficiency of DRL, we aim to enhance robots' ability to make high-level decisions in dynamic environments.</p>
+                    </div>
+                </article>
+
+                <article id="methodology" class="report-article fade-in">
+                    <div class="article-header">
+                        <span class="article-number">02</span>
+                        <h3>Methodology</h3>
+                    </div>
+                    <div class="article-body">
+                        <h4>2.1 The Challenge: Obstacle and Occlusion Avoidance</h4>
+                        <p>In robotic follow-ahead applications, a robot must navigate in front of a human, maintaining a consistent distance and orientation. This task is complex due to:</p>
+                        <ul class="styled-list">
+                            <li><strong>Predicting Human Intentions:</strong> The robot must anticipate the human's future movements</li>
+                            <li><strong>Dynamic Environments:</strong> Obstacles and potential occlusions can obstruct the robot's path or line of sight</li>
+                            <li><strong>Safety Requirements:</strong> Avoiding collisions is critical for both human and robot safety</li>
+                        </ul>
+
+                        <h4>2.2 How MCTS Enhances Robotic Navigation</h4>
+                        <p>By integrating MCTS with DRL, the robot can:</p>
+                        <ul class="styled-list">
+                            <li><strong>Make High-Level Decisions:</strong> Generate short-term navigational goals rather than low-level control commands</li>
+                            <li><strong>Efficiently Explore Decision Space:</strong> MCTS can handle large, continuous state spaces by focusing on promising paths</li>
+                            <li><strong>Avoid Obstacles and Occlusions:</strong> Incorporate environmental data to simulate and evaluate potential future states</li>
+                        </ul>
+
+                        <h4>2.3 Role of Deep Reinforcement Learning</h4>
+                        <p>DRL provides a trained policy that estimates the expected rewards for actions, aiding MCTS in evaluating nodes during tree expansion. This integration improves the consistency and reliability of the navigational goals generated.</p>
+
+                        <div class="algorithm-box">
+                            <h4>Algorithm: MCTS-DRL Approach</h4>
+                            <div class="algo-content">
+                                <p><strong>Input:</strong> Robot pose (x<sub>r</sub>, y<sub>r</sub>, θ<sub>r</sub>), Human trajectory waypoints, Occupancy map</p>
+                                <p><strong>Output:</strong> Navigational goal point</p>
+                                <ol>
+                                    <li>Initialize parent node with robot's initial state and potential goals</li>
+                                    <li>For specified number of expansions:
+                                        <ul>
+                                            <li>Expand search tree by simulating possible actions</li>
+                                            <li>Check for collisions against occupancy map</li>
+                                            <li>If no collision and no occlusion: compute reward R using Q(o, a<sub>i</sub>)</li>
+                                            <li>If occlusion present: set node value to −1</li>
+                                            <li>Update parent node value</li>
+                                        </ul>
+                                    </li>
+                                    <li>Select next parent as leaf node with highest UCB</li>
+                                    <li>Return goal point as leaf node with highest UCB when c = 0</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article id="experiments" class="report-article fade-in">
+                    <div class="article-header">
+                        <span class="article-number">03</span>
+                        <h3>Experiments & Results</h3>
+                    </div>
+                    <div class="article-body">
+                        <h4>3.1 Performance Comparison</h4>
+                        <p>We compared how well the proposed MCTS-DRL method performs compared to standard MCTS and DRL algorithms. The experiment took place in a simulated environment, focusing on two specific human movement patterns: a circular path and an S-shaped path.</p>
+
+                        <div class="table-wrapper">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Human Trajectory</th>
+                                        <th>DRL</th>
+                                        <th>MCTS</th>
+                                        <th>MCTS-DRL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Circle</td>
+                                        <td>−17.95</td>
+                                        <td>2.87 ± 5.96</td>
+                                        <td class="highlight-cell">4.53</td>
+                                    </tr>
+                                    <tr>
+                                        <td>S-shaped</td>
+                                        <td>−21.84</td>
+                                        <td>−3.83 ± 4.33</td>
+                                        <td class="highlight-cell">−1.61</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p class="table-caption">Table: Sum of rewards achieved by DRL, MCTS, and MCTS-DRL methods for two distinct human trajectories.</p>
+                        </div>
+
+                        <h4>3.2 Key Findings</h4>
+                        <ul class="styled-list">
+                            <li>The <strong>DRL approach</strong> struggles to follow the human path accurately and avoid obstacles, likely because the model was trained in an environment without obstacles</li>
+                            <li>The <strong>MCTS approach</strong> often fails to produce consistent results, especially around corners, due to its reliance on random action selection</li>
+                            <li>The <strong>MCTS-DRL method</strong> performs significantly better, enabling the robot to maintain a safe distance, avoid obstacles, and produce smooth, stable behavior</li>
+                        </ul>
+
+                        <h4>3.3 Obstacle and Occlusion Avoidance</h4>
+                        <p>We designed scenarios to assess the proposed method's performance in both obstacle-free and obstacle-filled environments using three specific trajectories: straight, U-shaped, and S-shaped.</p>
+                        
+                        <div class="experiment-cards">
+                            <div class="exp-card">
+                                <div class="exp-icon">━━━</div>
+                                <h5>Straight Path</h5>
+                                <p>In obstacle-free environment, robot maintained position in front. With obstacle, robot adjusted path, turning left to avoid occlusion.</p>
+                            </div>
+                            <div class="exp-card">
+                                <div class="exp-icon">╭━╯</div>
+                                <h5>U-Shaped Path</h5>
+                                <p>Robot faced obstacle at ~12 seconds and adjusted path to avoid occlusion rather than navigating around the obstacle.</p>
+                            </div>
+                            <div class="exp-card">
+                                <div class="exp-icon">∿∿∿</div>
+                                <h5>S-Shaped Path</h5>
+                                <p>Robot altered course at ~17 seconds to avoid occlusion while maintaining follow-ahead behavior.</p>
+                            </div>
+                            <div class="exp-card">
+                                <div class="exp-icon">┗━━</div>
+                                <h5>L-Shaped Corridor</h5>
+                                <p>Robot adjusted trajectory at corner, turning right to avoid collisions while maintaining position beside human.</p>
+                            </div>
+                        </div>
+
+                        <h4>3.4 SL-MCTS vs Traditional MCTS</h4>
+                        <div class="table-wrapper">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Metric</th>
+                                        <th>Traditional MCTS</th>
+                                        <th>SL-MCTS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Success Rate</td>
+                                        <td>78%</td>
+                                        <td class="highlight-cell">92%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Average Path Length</td>
+                                        <td>15 steps</td>
+                                        <td class="highlight-cell">12 steps</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Computation Time</td>
+                                        <td>2.4s</td>
+                                        <td class="highlight-cell">1.3s</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p class="table-caption">Table: Comparative Analysis of SL-MCTS and Traditional MCTS</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article id="conclusion" class="report-article fade-in">
+                    <div class="article-header">
+                        <span class="article-number">04</span>
+                        <h3>Conclusion</h3>
+                    </div>
+                    <div class="article-body">
+                        <p>This study presents a groundbreaking approach for robotic follow-ahead applications, focusing on avoiding collisions and occlusions caused by obstacles in the environment. By combining Monte Carlo Tree Search (MCTS) with Deep Reinforcement Learning (DRL), our method generates reliable navigation goals for the robot.</p>
+                        
+                        <div class="conclusion-highlights">
+                            <div class="highlight-item">
+                                <span class="highlight-icon">✓</span>
+                                <p>The proposed MCTS-DRL approach outperforms standalone MCTS and DRL algorithms</p>
+                            </div>
+                            <div class="highlight-item">
+                                <span class="highlight-icon">✓</span>
+                                <p>Effectively follows a target person from the front while maintaining safe distance</p>
+                            </div>
+                            <div class="highlight-item">
+                                <span class="highlight-icon">✓</span>
+                                <p>Works reliably regardless of whether obstacles are present</p>
+                            </div>
+                            <div class="highlight-item">
+                                <span class="highlight-icon">✓</span>
+                                <p>Demonstrates potential to improve autonomous robotic navigation</p>
+                            </div>
+                        </div>
+
+                        <p>These findings underscore the potential of our MCTS-DRL method to improve autonomous robotic navigation and address real-world challenges related to collision and occlusion.</p>
+                    </div>
+                </article>
+
+                <article id="references" class="report-article fade-in">
+                    <div class="article-header">
+                        <span class="article-number">05</span>
+                        <h3>References</h3>
+                    </div>
+                    <div class="article-body">
+                        <div class="references-list">
+                            <div class="reference-item">
+                                <span class="ref-number">[1]</span>
+                                <div class="ref-content">
+                                    <p class="ref-title">"An MCTS-DRL Based Obstacle and Occlusion Avoidance Methodology in Robotic Follow-Ahead Applications"</p>
+                                    <p class="ref-authors">Sahar Leisiazar, Edward J. Park, Angelica Lim and Mo Chen, 2023</p>
+                                    <p class="ref-usage">Primary source for MCTS-DRL methodology, Sections I-IV, Figures 1-8</p>
+                                </div>
+                            </div>
+                            <div class="reference-item">
+                                <span class="ref-number">[2]</span>
+                                <div class="ref-content">
+                                    <p class="ref-title">"A Self-Learning Monte Carlo Tree Search Algorithm for Robot Path Planning"</p>
+                                    <p class="ref-authors">Wei Li, Yi Liu, Yan Ma, Kang Xu, Jiang Qiu, and Zhongxue Gan. Frontiers in Neurorobotics, 2023</p>
+                                    <p class="ref-usage">Traditional MCTS flow including Selection, Expansion, Simulation, Backpropagation</p>
+                                </div>
+                            </div>
+                            <div class="reference-item">
+                                <span class="ref-number">[3]</span>
+                                <div class="ref-content">
+                                    <p class="ref-title">"Robust walking control of a lower limb rehabilitation exoskeleton coupled with a musculoskeletal model via deep reinforcement learning"</p>
+                                    <p class="ref-authors">—</p>
+                                    <p class="ref-usage">DRL Algorithm implementation, Sections I-IV</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- PDF Report Download Section -->
+    <section id="download" class="download-section">
+        <div class="container">
+            <div class="section-header center">
+                <div class="section-label center">Download</div>
+                <h2 class="section-title center">Access the Full Research Paper</h2>
+            </div>
+            <div class="download-content">
+                <div class="pdf-preview fade-in">
+                    <div class="pdf-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 18V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9 15L12 18L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3>Team14_Lathi_Sinha_Chatterjee_MonteCarlo.pdf</h3>
+                        <p class="pdf-meta">Final Project Report • EEE598 Fall 2024 • 6 pages</p>
+                        <p class="pdf-description">Complete research paper including methodology, experimental results, performance comparisons, and future directions for MCTS-DRL in robotic navigation.</p>
+                    </div>
+                </div>
+                
+                <div class="download-actions fade-in">
+                    <a href="https://github.com/sleepingbomb/MONTE_CARLO_TREE_SEARCH/raw/main/Team14_Lathi_Sinha_Chatterjee_MonteCarlo.pdf" class="btn btn-primary btn-large" download>
+                        <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Download PDF
+                    </a>
+                    <a href="https://github.com/sleepingbomb/MONTE_CARLO_TREE_SEARCH/blob/main/Team14_Lathi_Sinha_Chatterjee_MonteCarlo.pdf" class="btn btn-secondary btn-large" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                            <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        View on GitHub
+                    </a>
+                </div>
+
+                <div class="paper-highlights fade-in">
+                    <h4>Paper Highlights</h4>
+                    <div class="highlights-grid">
+                        <div class="highlight-box">
+                            <span class="highlight-number">I</span>
+                            <span class="highlight-text">Introduction to MCTS & Human-Robot Interaction</span>
+                        </div>
+                        <div class="highlight-box">
+                            <span class="highlight-number">II</span>
+                            <span class="highlight-text">Challenge: Obstacle & Occlusion Avoidance</span>
+                        </div>
+                        <div class="highlight-box">
+                            <span class="highlight-number">III</span>
+                            <span class="highlight-text">MCTS-DRL Integration Methodology</span>
+                        </div>
+                        <div class="highlight-box">
+                            <span class="highlight-number">IV</span>
+                            <span class="highlight-text">Experimental Results & Analysis</span>
+                        </div>
+                        <div class="highlight-box">
+                            <span class="highlight-number">V</span>
+                            <span class="highlight-text">Future Directions & Improvements</span>
+                        </div>
+                        <div class="highlight-box">
+                            <span class="highlight-number">VI</span>
+                            <span class="highlight-text">Conclusion & References</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="github-repo fade-in">
+                    <a href="https://github.com/sleepingbomb/MONTE_CARLO_TREE_SEARCH" target="_blank" rel="noopener noreferrer" class="repo-card">
+                        <div class="repo-icon">
+                            <svg height="32" width="32" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                            </svg>
+                        </div>
+                        <div class="repo-info">
+                            <span class="repo-name">sleepingbomb/MONTE_CARLO_TREE_SEARCH</span>
+                            <span class="repo-desc">View full repository with source code and documentation</span>
+                        </div>
+                        <div class="repo-arrow">→</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Future Directions Section -->
+    <section class="future">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Future Directions</div>
+                <h2 class="section-title">Advancing MCTS-DRL Research</h2>
+            </div>
+            <div class="future-grid">
+                <div class="future-card fade-in">
+                    <div class="future-number">01</div>
+                    <h3 class="future-title">Enhanced Human Intention Prediction</h3>
+                    <p class="future-desc">Incorporating advanced models like transformers to improve trajectory prediction accuracy and anticipate human behavior more effectively.</p>
+                </div>
+                <div class="future-card fade-in">
+                    <div class="future-number">02</div>
+                    <h3 class="future-title">Multi-Agent Scalability</h3>
+                    <p class="future-desc">Expanding the system for multi-agent environments, enabling collaborative navigation and coordinated decision-making among multiple robots.</p>
+                </div>
+                <div class="future-card fade-in">
+                    <div class="future-number">03</div>
+                    <h3 class="future-title">Energy Optimization</h3>
+                    <p class="future-desc">Enhancing the algorithm's energy efficiency by optimizing computational resource allocation for deployment on edge devices.</p>
+                </div>
+                <div class="future-card fade-in">
+                    <div class="future-number">04</div>
+                    <h3 class="future-title">Cross-Domain Versatility</h3>
+                    <p class="future-desc">Applying the hybrid framework to other domains including autonomous vehicles, drones, and industrial automation systems.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="team">
+        <div class="container">
+            <div class="section-header center">
+                <div class="section-label center">Research Team</div>
+                <h2 class="section-title center">Team 14 — Arizona State University</h2>
+            </div>
+            <div class="team-grid">
+                <div class="team-card fade-in">
+                    <div class="team-avatar">SL</div>
+                    <h3 class="team-name">Sakshi Lathi</h3>
+                    <a href="mailto:slathi@asu.edu" class="team-email">slathi@asu.edu</a>
+                </div>
+                <div class="team-card fade-in">
+                    <div class="team-avatar">AS</div>
+                    <h3 class="team-name">Abhijit Sinha</h3>
+                    <a href="mailto:asinh117@asu.edu" class="team-email">asinh117@asu.edu</a>
+                </div>
+                <div class="team-card fade-in">
+                    <div class="team-avatar">AC</div>
+                    <h3 class="team-name">Anusha Chatterjee</h3>
+                    <a href="mailto:achatt53@asu.edu" class="team-email">achatt53@asu.edu</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-logo">MCTS-DRL</div>
+            <p class="footer-text">
+                School of Electrical, Computer, and Energy Engineering<br>
+                Arizona State University — EEE598, Fall 2024
+            </p>
+            <div class="footer-links">
+                <a href="#overview">Overview</a>
+                <a href="#stages">Algorithm</a>
+                <a href="#applications">Applications</a>
+                <a href="#results">Results</a>
+                <a href="#report">Report</a>
+                <a href="#download">PDF</a>
+            </div>
+            <p class="footer-copyright">© 2024 Team 14. Open source under MIT License.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/main.js"></script>
+</body>
+</html>
