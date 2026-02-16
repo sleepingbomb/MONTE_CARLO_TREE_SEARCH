@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monte Carlo Tree Search | MCTS-DRL Research</title>
+    <meta name="description" content="A hybrid MCTS-DRL pathfinding algorithm designed for safe, predictive human-robot interaction and tracking.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #222240;
+            --text-primary: #e8e8f0;
+            --text-secondary: #9898b0;
+            --text-muted: #6868a0;
+            --accent-primary: #7c3aed;
+            --accent-secondary: #06b6d4;
+            --accent-gradient: linear-gradient(135deg, #7c3aed, #06b6d4);
+            --accent-glow: rgba(124, 58, 237, 0.3);
+            --border-color: rgba(124, 58, 237, 0.15);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --success: #22c55e;
+            --font-heading: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-body: 'Space Grotesk', sans-serif;
+            --radius: 12px;
+            --radius-lg: 20px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --shadow-glow: 0 0 40px rgba(124,58,237,0.15);
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html{scroll-behavior:smooth;scroll-padding-top:80px}
+        body{font-family:var(--font-body);background:var(--bg-primary);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+        a{color:var(--accent-secondary);text-decoration:none;transition:color .3s}
+        a:hover{color:var(--accent-primary)}
+        img{max-width:100%;display:block}
+        ::selection{background:var(--accent-primary);color:#fff}
+
+        /* NAV */
+        nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-subtle);padding:0 2rem;transition:all .3s}
+        nav.scrolled{background:rgba(10,10,15,.95);box-shadow:var(--shadow)}
+        .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:70px}
+        .nav-logo{font-family:var(--font-mono);font-weight:700;font-size:1.3rem;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px}
+        .nav-links{display:flex;gap:2rem;list-style:none}
+        .nav-links a{color:var(--text-secondary);font-size:.85rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;transition:color .3s;position:relative}
+        .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:var(--accent-gradient);transition:width .3s}
+        .nav-links a:hover{color:var(--text-primary)}
+        .nav-links a:hover::after{width:100%}
+        .hamburger{display:none;cursor:pointer;flex-direction:column;gap:5px}
+        .hamburger span{width:24px;height:2px;background:var(--text-primary);transition:.3s}
+
+        /* HERO */
+        .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 2rem 80px;position:relative;overflow:hidden}
+        .hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 50% 50%,rgba(124,58,237,.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(6,182,212,.05) 0%,transparent 50%);animation:heroGlow 15s ease-in-out infinite alternate}
+        @keyframes heroGlow{0%{transform:translate(0,0) rotate(0deg)}100%{transform:translate(-5%,5%) rotate(3deg)}}
+        .hero-content{position:relative;z-index:1;max-width:800px}
+        .hero h1{font-family:var(--font-heading);font-size:clamp(2.5rem,6vw,4.5rem);font-weight:700;line-height:1.1;margin-bottom:1.5rem;background:linear-gradient(135deg,#fff 0%,#c4b5fd 50%,#06b6d4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .hero p{font-size:1.15rem;color:var(--text-secondary);max-width:650px;margin:0 auto 2.5rem;line-height:1.8}
+        .hero-meta{display:flex;gap:2.5rem;justify-content:center;margin-bottom:3rem;flex-wrap:wrap}
+        .hero-meta-item{text-align:center}
+        .hero-meta-item .label{font-size:.75rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.25rem}
+        .hero-meta-item .value{font-weight:600;color:var(--accent-secondary)}
+        .hero-buttons{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+        .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:50px;font-weight:600;font-size:.9rem;transition:all .3s;cursor:pointer;border:none;font-family:var(--font-body)}
+        .btn-primary{background:var(--accent-gradient);color:#fff;box-shadow:0 4px 20px var(--accent-glow)}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--accent-glow);color:#fff}
+        .btn-secondary{background:transparent;color:var(--text-primary);border:1px solid var(--border-color)}
+        .btn-secondary:hover{background:var(--bg-card);border-color:var(--accent-primary);color:#fff}
+        .scroll-indicator{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);color:var(--text-muted);font-size:.8rem;letter-spacing:2px;animation:bounce 2s infinite}
+        @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+
+        /* SECTIONS */
+        section{padding:100px 2rem}
+        .section-container{max-width:1100px;margin:0 auto}
+        .section-label{font-family:var(--font-mono);font-size:.8rem;text-transform:uppercase;letter-spacing:3px;color:var(--accent-primary);margin-bottom:1rem}
+        .section-title{font-family:var(--font-heading);font-size:clamp(1.8rem,4vw,2.5rem);font-weight:700;margin-bottom:3rem;line-height:1.3}
+
+        /* OVERVIEW */
+        .overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem}
+        .overview-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:2rem;transition:all .4s;position:relative;overflow:hidden}
+        .overview-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent-gradient);transform:scaleX(0);transition:transform .4s;transform-origin:left}
+        .overview-card:hover{transform:translateY(-4px);border-color:var(--border-color);box-shadow:var(--shadow-glow)}
+        .overview-card:hover::before{transform:scaleX(1)}
+        .overview-card .icon{font-size:2rem;margin-bottom:1rem}
+        .overview-card h3{font-size:1.1rem;margin-bottom:.75rem;font-weight:600}
+        .overview-card p{font-size:.9rem;color:var(--text-secondary);line-height:1.7}
+
+        /* STAGES */
+        .stages-list{display:flex;flex-direction:column;gap:2rem}
+        .stage-card{display:grid;grid-template-columns:60px 1fr auto;gap:2rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:2rem;transition:all .3s;align-items:start}
+        .stage-card:hover{border-color:var(--border-color);box-shadow:var(--shadow-glow)}
+        .stage-number{width:50px;height:50px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:1.2rem}
+        .stage-card h3{font-size:1.2rem;margin-bottom:.75rem}
+        .stage-card p{color:var(--text-secondary);font-size:.95rem}
+        .stage-ascii{background:var(--bg-primary);border-radius:8px;padding:1rem;font-family:var(--font-mono);font-size:.8rem;color:var(--accent-secondary);white-space:pre;line-height:1.5;min-width:180px}
+
+        /* FORMULA */
+        .formula-section{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:3rem;margin-top:4rem;text-align:center}
+        .formula-display{font-family:var(--font-mono);font-size:clamp(1.2rem,3vw,1.8rem);color:var(--accent-secondary);margin:2rem 0;padding:1.5rem;background:var(--bg-primary);border-radius:var(--radius);border:1px solid var(--border-color);display:inline-block}
+        .formula-vars{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-top:2rem;text-align:left}
+        .formula-var{display:flex;gap:.75rem;align-items:start}
+        .formula-var .var-symbol{font-family:var(--font-mono);font-weight:700;color:var(--accent-primary);min-width:30px;font-size:1.1rem}
+        .formula-var .var-desc{font-size:.9rem;color:var(--text-secondary)}
+
+        /* APPLICATIONS */
+        .app-featured{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:2.5rem;margin-bottom:2rem;position:relative;overflow:hidden}
+        .app-featured::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent-gradient)}
+        .app-featured-content{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:center}
+        .app-featured h3{font-size:1.4rem;margin-bottom:1rem}
+        .app-featured .icon{font-size:1.8rem;margin-bottom:.5rem}
+        .app-featured p{color:var(--text-secondary);margin-bottom:1.5rem}
+        .app-featured ul{list-style:none}
+        .app-featured ul li{padding:.4rem 0;color:var(--text-secondary);font-size:.9rem;display:flex;align-items:center;gap:.5rem}
+        .app-featured ul li::before{content:'▸';color:var(--accent-primary)}
+        .tesla-image-container{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-subtle);background:var(--bg-primary)}
+        .tesla-image-container img{width:100%;height:100%;object-fit:cover;border-radius:var(--radius);transition:transform .5s}
+        .tesla-image-container:hover img{transform:scale(1.03)}
+
+        .app-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem}
+        .app-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:2rem;transition:all .3s}
+        .app-card:hover{transform:translateY(-3px);border-color:var(--border-color);box-shadow:var(--shadow-glow)}
+        .app-card .icon{font-size:2rem;margin-bottom:1rem}
+        .app-card h3{font-size:1.05rem;margin-bottom:.5rem}
+        .app-card p{font-size:.85rem;color:var(--text-secondary)}
+
+        /* RESULTS */
+        .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:2.5rem}
+        .stat-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:1.5rem;text-align:center}
+        .stat-value{font-family:var(--font-mono);font-size:2.5rem;font-weight:700;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .stat-label{font-size:.85rem;color:var(--text-secondary);margin-top:.25rem}
+        .results-table{width:100%;border-collapse:collapse;background:var(--bg-card);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-subtle)}
+        .results-table th{background:var(--bg-secondary);padding:1rem 1.5rem;text-align:left;font-weight:600;font-size:.85rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);border-bottom:1px solid var(--border-subtle)}
+        .results-table td{padding:1rem 1.5rem;border-bottom:1px solid var(--border-subtle);font-size:.9rem;color:var(--text-secondary)}
+        .results-table tr:last-child td{border-bottom:none}
+        .results-table tr:last-child{background:rgba(124,58,237,.08)}
+        .results-table tr:last-child td{color:var(--text-primary);font-weight:600}
+
+        /* CODE */
+        .code-block{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden}
+        .code-header{display:flex;align-items:center;gap:.75rem;padding:.75rem 1.25rem;background:var(--bg-card);border-bottom:1px solid var(--border-subtle)}
+        .code-dot{width:10px;height:10px;border-radius:50%}
+        .code-dot.red{background:#ef4444}.code-dot.yellow{background:#f59e0b}.code-dot.green{background:#22c55e}
+        .code-filename{font-family:var(--font-mono);font-size:.8rem;color:var(--text-muted);margin-left:auto}
+        .code-content{padding:1.5rem;font-family:var(--font-mono);font-size:.85rem;line-height:1.8;overflow-x:auto;color:var(--text-secondary)}
+        .code-content .keyword{color:#c084fc}
+        .code-content .function{color:#67e8f9}
+        .code-content .comment{color:#6b7280}
+        .code-content .number{color:#fbbf24}
+
+        /* REPORT */
+        .report-section{background:var(--bg-secondary)}
+        .report-tabs{display:flex;gap:.5rem;margin-bottom:2rem;flex-wrap:wrap;border-bottom:1px solid var(--border-subtle);padding-bottom:.5rem}
+        .report-tab{padding:.6rem 1.2rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:var(--text-muted);transition:all .3s;border:none;background:none;font-family:var(--font-body)}
+        .report-tab:hover{color:var(--text-primary);background:var(--bg-card)}
+        .report-tab.active{color:#fff;background:var(--accent-primary)}
+        .report-content{display:none}
+        .report-content.active{display:block}
+        .report-content h3{font-size:1.3rem;margin-bottom:1rem}
+        .report-content h4{font-size:1.1rem;margin:1.5rem 0 .75rem;color:var(--accent-secondary)}
+        .report-content p{color:var(--text-secondary);margin-bottom:1rem;line-height:1.8;font-size:.95rem}
+        .report-content ul{list-style:none;margin-bottom:1rem}
+        .report-content ul li{padding:.3rem 0;color:var(--text-secondary);font-size:.95rem;padding-left:1.5rem;position:relative}
+        .report-content ul li::before{content:'•';position:absolute;left:0;color:var(--accent-primary)}
+        .report-number{font-family:var(--font-mono);font-size:.8rem;color:var(--accent-primary);margin-bottom:.5rem}
+        .conclusion-item{display:flex;gap:.75rem;align-items:start;padding:.75rem 0;color:var(--text-secondary)}
+        .conclusion-check{color:var(--success);font-weight:bold}
+        .report-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+        .report-table th,.report-table td{padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border-subtle)}
+        .report-table th{color:var(--text-muted);font-weight:600;font-size:.8rem;text-transform:uppercase}
+        .report-table td{color:var(--text-secondary)}
+        .trajectory-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1.5rem 0}
+        .trajectory-card{background:var(--bg-card);border-radius:8px;padding:1.5rem;border:1px solid var(--border-subtle)}
+        .trajectory-card .traj-icon{font-family:var(--font-mono);font-size:1.5rem;color:var(--accent-secondary);margin-bottom:.75rem}
+        .trajectory-card h5{font-size:.95rem;margin-bottom:.5rem}
+        .trajectory-card p{font-size:.85rem;color:var(--text-secondary)}
+
+        /* DOWNLOAD */
+        .download-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:3rem;text-align:center}
+        .download-card h3{font-family:var(--font-mono);margin-bottom:.5rem}
+        .download-meta{color:var(--text-muted);font-size:.85rem;margin-bottom:1.5rem}
+        .download-card p{color:var(--text-secondary);max-width:600px;margin:0 auto 2rem}
+        .download-buttons{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+        .paper-highlights{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-top:2rem;text-align:left}
+        .paper-highlight{display:flex;gap:.75rem;align-items:start;padding:.75rem;background:var(--bg-secondary);border-radius:8px}
+        .paper-highlight .ph-num{font-family:var(--font-mono);font-weight:700;color:var(--accent-primary);font-size:.85rem;min-width:20px}
+        .paper-highlight .ph-text{font-size:.85rem;color:var(--text-secondary)}
+        .repo-link{display:block;margin-top:2rem;padding:1.5rem;background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius);text-align:left;transition:all .3s}
+        .repo-link:hover{border-color:var(--border-color)}
+        .repo-link .repo-name{font-family:var(--font-mono);color:var(--accent-secondary);margin-bottom:.25rem}
+        .repo-link .repo-desc{font-size:.85rem;color:var(--text-muted)}
+
+        /* FUTURE */
+        .future-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem}
+        .future-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:2rem;transition:all .3s}
+        .future-card:hover{border-color:var(--border-color);transform:translateY(-3px)}
+        .future-num{font-family:var(--font-mono);font-size:.85rem;color:var(--accent-primary);margin-bottom:.75rem}
+        .future-card h3{font-size:1.05rem;margin-bottom:.5rem}
+        .future-card p{font-size:.85rem;color:var(--text-secondary)}
+
+        /* TEAM */
+        .team-section{background:var(--bg-secondary)}
+        .team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem}
+        .team-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:2rem;text-align:center;transition:all .3s}
+        .team-card:hover{border-color:var(--border-color)}
+        .team-avatar{width:60px;height:60px;border-radius:50%;margin:0 auto 1rem;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem}
+        .team-card h3{font-size:1.05rem;margin-bottom:.25rem}
+        .team-card a{font-size:.85rem}
+
+        /* REFS */
+        .ref-list{display:flex;flex-direction:column;gap:1rem}
+        .ref-item{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:1.5rem;display:grid;grid-template-columns:40px 1fr;gap:1rem}
+        .ref-num{font-family:var(--font-mono);font-weight:700;font-size:.85rem;color:var(--accent-primary);background:var(--bg-secondary);width:35px;height:35px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+        .ref-item .ref-title{font-weight:600;font-size:.95rem;margin-bottom:.25rem}
+        .ref-item .ref-authors{font-size:.85rem;color:var(--text-muted);margin-bottom:.25rem}
+        .ref-item .ref-note{font-size:.8rem;color:var(--text-muted);font-style:italic}
+
+        /* FOOTER */
+        footer{background:var(--bg-secondary);border-top:1px solid var(--border-subtle);padding:3rem 2rem}
+        .footer-inner{max-width:1100px;margin:0 auto;text-align:center}
+        .footer-logo{font-family:var(--font-mono);font-weight:700;font-size:1.1rem;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+        .footer-info{font-size:.85rem;color:var(--text-muted);margin-bottom:1.5rem}
+        .footer-links{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+        .footer-links a{color:var(--text-secondary);font-size:.85rem}
+        .footer-copy{font-size:.8rem;color:var(--text-muted)}
+
+        /* RESPONSIVE */
+        @media(max-width:768px){
+            .nav-links{display:none}
+            .hamburger{display:flex}
+            .nav-links.open{display:flex;flex-direction:column;position:absolute;top:70px;left:0;right:0;background:var(--bg-primary);padding:1.5rem 2rem;border-bottom:1px solid var(--border-subtle)}
+            .stage-card{grid-template-columns:1fr}
+            .stage-ascii{display:none}
+            .app-featured-content{grid-template-columns:1fr}
+            .stats-row{grid-template-columns:1fr}
+            .hero-meta{gap:1.5rem}
+        }
+
+        /* ANIMATIONS */
+        .fade-in{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+        .fade-in.visible{opacity:1;transform:translateY(0)}
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+    <div class="nav-inner">
+        <div class="nav-logo">MCTS</div>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#stages">Algorithm</a></li>
+            <li><a href="#applications">Applications</a></li>
+            <li><a href="#results">Results</a></li>
+            <li><a href="#report">Report</a></li>
+            <li><a href="#download">PDF</a></li>
+            <li><a href="#team">Team</a></li>
+        </ul>
+        <div class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Monte Carlo Tree Search</h1>
+        <!-- ✅ CHANGED: Caption updated from README title -->
+        <p>A hybrid MCTS-DRL pathfinding algorithm designed for safe, predictive human-robot interaction and tracking.</p>
+        <div class="hero-meta">
+            <div class="hero-meta-item">
+                <div class="label">Course</div>
+                <div class="value">EEE598, Fall 2024</div>
+            </div>
+            <div class="hero-meta-item">
+                <div class="label">Team</div>
+                <div class="value">Team 14</div>
+            </div>
+            <div class="hero-meta-item">
+                <div class="label">Institution</div>
+                <div class="value">Arizona State University</div>
+            </div>
+        </div>
+        <div class="hero-buttons">
+            <a href="#stages" class="btn btn-primary">Explore Algorithm</a>
+            <a href="#report" class="btn btn-secondary">Read Report</a>
+        </div>
+    </div>
+    <div class="scroll-indicator">Scroll ↓</div>
+</section>
+
+<!-- OVERVIEW -->
+<section id="overview">
+    <div class="section-container">
+        <div class="section-label">Overview</div>
+        <h2 class="section-title">Solving Complex Decision-Making Problems Through Intelligent Exploration</h2>
+        <div class="overview-grid">
+            <div class="overview-card fade-in">
+                <div class="icon">🤖</div>
+                <h3>Human-Robot Interaction</h3>
+                <p>Enabling robots to follow human targets from ahead while maintaining safe distances and avoiding obstacles in dynamic environments.</p>
+            </div>
+            <div class="overview-card fade-in">
+                <div class="icon">🎯</div>
+                <h3>Predictive Navigation</h3>
+                <p>Anticipating human movements and navigating around obstacles through stochastic sampling to forecast optimal strategies based on expected future rewards.</p>
+            </div>
+            <div class="overview-card fade-in">
+                <div class="icon">🧠</div>
+                <h3>DRL Integration</h3>
+                <p>Combining MCTS with Deep Reinforcement Learning to generate reliable navigational goals while tracking human targets in uncertain environments.</p>
+            </div>
+            <div class="overview-card fade-in">
+                <div class="icon">⚡</div>
+                <h3>Real-Time Adaptation</h3>
+                <p>Making high-level decisions and efficiently exploring decision spaces by focusing on promising paths while avoiding collisions and occlusions.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ALGORITHM -->
+<section id="stages" style="background:var(--bg-secondary)">
+    <div class="section-container">
+        <div class="section-label">Algorithm</div>
+        <h2 class="section-title">The Four Stages of Monte Carlo Tree Search</h2>
+        <div class="stages-list">
+            <div class="stage-card fade-in">
+                <div class="stage-number">1</div>
+                <div>
+                    <h3>Selection</h3>
+                    <p>Beginning at the root node, the algorithm traverses the tree using the Upper Confidence Bound (UCT) formula. This guides the search toward promising branches, balancing exploration of new paths with exploitation of known high-reward routes.</p>
+                </div>
+                <div class="stage-ascii">    ●──────┐
+    │      │
+    ●      ●  ← UCT
+    │
+    ▼</div>
+            </div>
+            <div class="stage-card fade-in">
+                <div class="stage-number">2</div>
+                <div>
+                    <h3>Expansion</h3>
+                    <p>New child nodes are added to represent potential future states and unexplored actions. This expands the search tree by simulating possible outcomes from the current decision point.</p>
+                </div>
+                <div class="stage-ascii">         ●
+        /│\
+       ● ● ●  ← New
+      / \
+     ●   ●</div>
+            </div>
+            <div class="stage-card fade-in">
+                <div class="stage-number">3</div>
+                <div>
+                    <h3>Simulation</h3>
+                    <p>Each node undergoes a play-out or rollout to estimate future rewards. Models like SL-MCTS utilize neural networks to improve predictions and guide simulations toward more realistic outcomes.</p>
+                </div>
+                <div class="stage-ascii">    ●
+    │
+    ↓ Rollout
+    ↓ ↓ ↓
+   [R = +1]</div>
+            </div>
+            <div class="stage-card fade-in">
+                <div class="stage-number">4</div>
+                <div>
+                    <h3>Backpropagation</h3>
+                    <p>Rewards from simulations update node statistics along the selected path. This enhances future path choices by favoring high-reward routes and continuously improving the decision tree.</p>
+                </div>
+                <div class="stage-ascii">    ● ←──────┐
+    │        │
+    ●        │ Update
+    │        │
+    ●────────┘</div>
+            </div>
+        </div>
+
+        <div class="formula-section fade-in">
+            <div class="section-label">Core Formula</div>
+            <h2 class="section-title" style="margin-bottom:1rem">Upper Confidence Bound (UCB)</h2>
+            <div class="formula-display">UCB = w/n<sub>c</sub> + c × √(ln n<sub>p</sub> / n<sub>c</sub>)</div>
+            <div class="formula-vars">
+                <div class="formula-var"><span class="var-symbol">w</span><span class="var-desc">Value of the leaf node after a rollout (expected reward)</span></div>
+                <div class="formula-var"><span class="var-symbol">n<sub>c</sub></span><span class="var-desc">Number of times the node has been visited</span></div>
+                <div class="formula-var"><span class="var-symbol">n<sub>p</sub></span><span class="var-desc">Number of times the parent node has been visited</span></div>
+                <div class="formula-var"><span class="var-symbol">c</span><span class="var-desc">Exploration parameter (typically set to √2 or 1.4)</span></div>
+            </div>
+            <p style="margin-top:1.5rem;color:var(--text-secondary);font-size:.9rem">This formula balances exploration and exploitation—the first term favors nodes with high rewards (exploitation), while the second term encourages visiting less-explored nodes (exploration).</p>
+        </div>
+    </div>
+</section>
+
+<!-- APPLICATIONS -->
+<section id="applications">
+    <div class="section-container">
+        <div class="section-label">Applications</div>
+        <h2 class="section-title">Real-World MCTS-DRL Implementations</h2>
+
+        <!-- ✅ CHANGED: Tesla.jpeg added to featured card -->
+        <div class="app-featured fade-in">
+            <div class="app-featured-content">
+                <div>
+                    <div class="icon">🦾</div>
+                    <h3>Tesla's Optimus Robot</h3>
+                    <p>Tesla's humanoid robot leverages MCTS for decision-making in dynamic, multitask settings. MCTS helps Optimus simulate grip forms, prioritize safety, and adapt paths with real-time feedback while handling tasks alongside humans.</p>
+                    <ul>
+                        <li>Dynamic real-world task handling</li>
+                        <li>Enhanced navigational capabilities</li>
+                        <li>Real-time scenario simulation</li>
+                        <li>Adaptive decision-making for safety</li>
+                    </ul>
+                </div>
+                <div class="tesla-image-container">
+                    <img src="tesla.jpeg" alt="Tesla Optimus Robot">
+                </div>
+            </div>
+        </div>
+
+        <div class="app-grid">
+            <div class="app-card fade-in">
+                <div class="icon">🏭</div>
+                <h3>Multi-Agent Pathfinding</h3>
+                <p>Multiple agents navigating grids without colliding—commonly seen in robotics and automated warehouses where coordination is critical.</p>
+            </div>
+            <div class="app-card fade-in">
+                <div class="icon">🦿</div>
+                <h3>Wearable Exoskeletons</h3>
+                <p>In rehabilitation exoskeletons, MCTS adjusts support according to patient feedback in real-time, optimizing gait assistance and personalizing therapy.</p>
+            </div>
+            <div class="app-card fade-in">
+                <div class="icon">🚗</div>
+                <h3>Robot Path Planning</h3>
+                <p>Guaranteeing robots travel efficiently in changing, unknown environments while dynamically bypassing barriers and obstacles.</p>
+            </div>
+            <div class="app-card fade-in">
+                <div class="icon">🤝</div>
+                <h3>Human-Robot Collaboration</h3>
+                <p>Integrating robots into dynamic interactions with humans and other agents, increasing safety and boosting task completion rates.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results" style="background:var(--bg-secondary)">
+    <div class="section-container">
+        <div class="section-label">Results</div>
+        <h2 class="section-title">Performance Comparison: MCTS-DRL vs Standalone Methods</h2>
+        <div class="stats-row fade-in">
+            <div class="stat-card"><div class="stat-value">92%</div><div class="stat-label">SL-MCTS Success Rate</div></div>
+            <div class="stat-card"><div class="stat-value">1.3s</div><div class="stat-label">Computation Time</div></div>
+            <div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Avg Path Length (steps)</div></div>
+        </div>
+        <table class="results-table fade-in">
+            <thead><tr><th>Methodology</th><th>Trajectory Accuracy</th><th>Obstacle Avoidance</th><th>Occlusion Handling</th><th>Mean Reward</th></tr></thead>
+            <tbody>
+                <tr><td>DRL Only</td><td>Moderate</td><td>Limited</td><td>Poor</td><td>-18.4</td></tr>
+                <tr><td>MCTS Only</td><td>Inconsistent</td><td>Moderate</td><td>Moderate</td><td>3.2 ± 5.9</td></tr>
+                <tr><td>MCTS-DRL Hybrid</td><td>Excellent</td><td>High</td><td>High</td><td>5.4</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- IMPLEMENTATION -->
+<section>
+    <div class="section-container">
+        <div class="section-label">Implementation</div>
+        <h2 class="section-title">MCTS-DRL Algorithm Pseudocode</h2>
+        <div class="code-block fade-in">
+            <div class="code-header">
+                <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                <span class="code-filename">mcts_drl.py</span>
+            </div>
+            <div class="code-content"><span class="keyword">function</span> <span class="function">MCTS_DRL</span>(robot_pose, human_trajectory, occupancy_map):
+    <span class="comment"># Initialize parent node with robot state and human positions</span>
+    parent_node = (robot_pose, human_trajectory[<span class="number">0</span>])
+    
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(num_of_expansion):
+        <span class="keyword">while</span> parent_node <span class="keyword">is not</span> fully_expanded:
+            child = <span class="function">simulate</span>(parent_node, action)
+            
+            <span class="keyword">if</span> no collision:
+                <span class="keyword">if</span> no occlusion:
+                    R = <span class="function">Q</span>(observation, action)  <span class="comment"># DRL reward estimation</span>
+                    child.state = <span class="function">simulate_state</span>(action)
+                <span class="keyword">else</span>:
+                    child.value = <span class="number">-1</span>  <span class="comment"># Penalize occlusion</span>
+                
+                parent.value += child.value
+            <span class="keyword">else</span>:
+                <span class="function">delete</span>(child)  <span class="comment"># Remove collision paths</span>
+        
+        parent_node = <span class="function">select_leaf_node</span>(highest_UCB)
+    
+    <span class="keyword">return</span> <span class="function">goal_point</span>(leaf_node, UCB, c=<span class="number">0</span>)  <span class="comment"># Best exploitation path</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- REPORT -->
+<section id="report" class="report-section">
+    <div class="section-container">
+        <div class="section-label">Full Report</div>
+        <h2 class="section-title">Research Paper: MCTS-DRL for Robotic Navigation</h2>
+        <div class="report-tabs">
+            <button class="report-tab active" onclick="showTab('abstract',this)">Abstract</button>
+            <button class="report-tab" onclick="showTab('introduction',this)">Introduction</button>
+            <button class="report-tab" onclick="showTab('methodology',this)">Methodology</button>
+            <button class="report-tab" onclick="showTab('experiments',this)">Experiments</button>
+            <button class="report-tab" onclick="showTab('conclusion',this)">Conclusion</button>
+            <button class="report-tab" onclick="showTab('references',this)">References</button>
+        </div>
+
+        <div id="tab-abstract" class="report-content active">
+            <div class="report-number">00</div>
+            <h3>Abstract</h3>
+            <p>Monte Carlo Tree Search (MCTS) is a heuristic search algorithm renowned for resolving complex decision-making problems through iterative randomized exploration, prominently utilized in game-playing AI and sequential decision-making tasks.</p>
+            <p>In this paper, we delve into the fundamental structure of MCTS and its applications in robotics and wearable exoskeletons, focusing particularly on robotic follow-ahead scenarios that require obstacle and occlusion avoidance. By integrating MCTS with Deep Reinforcement Learning (DRL), we propose a novel methodology enabling robots to make high-level decisions and generate reliable navigational goals while tracking a human target in uncertain environments.</p>
+            <p>We analyze the balance between exploration and exploitation within MCTS, its predictive capabilities, and how these features amplify adaptive decision-making and support efficient pathfinding. Case studies and implementation examples, including Tesla's Optimus robot, are presented to illustrate MCTS's effectiveness in real-world applications.</p>
+            <p style="color:var(--text-muted);font-size:.85rem"><strong>Index Terms:</strong> MCTS-DRL, Exoskeleton, Tesla Optimus Robot, SL-MCTS, MCTS</p>
+        </div>
+
+        <div id="tab-introduction" class="report-content">
+            <div class="report-number">01</div>
+            <h3>Introduction</h3>
+            <p>Human-robot interaction is a rapidly advancing field with applications ranging from autonomous vehicles to assistive robotics. A particularly challenging task within this domain is enabling a robot to follow a human target from ahead, maintaining a safe distance while avoiding obstacles and occlusions.</p>
+            <p>Traditional methods often struggle with the complexities of predicting human intentions and navigating dynamic environments characterized by uncertainty. Monte Carlo Tree Search (MCTS) is a highly regarded algorithm known for its effectiveness in decision-making under uncertainty.</p>
+            <p>Initially applied in artificial intelligence for playing board games, MCTS has evolved into a versatile tool extensively utilized in robotics and the optimization of multi-agent systems. Its mechanism relies on stochastic sampling to forecast optimal strategies based on expected future rewards.</p>
+            <h4>The MCTS Process</h4>
+            <p>The MCTS process comprises four fundamental stages: <strong>Selection</strong>, <strong>Expansion</strong>, <strong>Simulation</strong>, and <strong>Backpropagation</strong>, each contributing to the growth and adaptability of the search tree over time.</p>
+            <p>In this paper, we explore how integrating MCTS with Deep Reinforcement Learning (DRL) offers a promising solution to the challenges of robotic follow-ahead applications.</p>
+        </div>
+
+        <div id="tab-methodology" class="report-content">
+            <div class="report-number">02</div>
+            <h3>Methodology</h3>
+            <h4>2.1 The Challenge: Obstacle and Occlusion Avoidance</h4>
+            <p>In robotic follow-ahead applications, a robot must navigate in front of a human, maintaining a consistent distance and orientation. This task is complex due to:</p>
+            <ul>
+                <li><strong>Predicting Human Intentions:</strong> The robot must anticipate the human's future movements</li>
+                <li><strong>Dynamic Environments:</strong> Obstacles and potential occlusions can obstruct the robot's path or line of sight</li>
+                <li><strong>Safety Requirements:</strong> Avoiding collisions is critical for both human and robot safety</li>
+            </ul>
+            <h4>2.2 How MCTS Enhances Robotic Navigation</h4>
+            <ul>
+                <li><strong>Make High-Level Decisions:</strong> Generate short-term navigational goals</li>
+                <li><strong>Efficiently Explore Decision Space:</strong> Focus on promising paths</li>
+                <li><strong>Avoid Obstacles and Occlusions:</strong> Incorporate environmental data</li>
+            </ul>
+            <h4>2.3 Role of Deep Reinforcement Learning</h4>
+            <p>DRL provides a trained policy that estimates the expected rewards for actions, aiding MCTS in evaluating nodes during tree expansion. This integration improves the consistency and reliability of the navigational goals generated.</p>
+        </div>
+
+        <div id="tab-experiments" class="report-content">
+            <div class="report-number">03</div>
+            <h3>Experiments &amp; Results</h3>
+            <h4>3.1 Performance Comparison</h4>
+            <p>We compared the MCTS-DRL method against standard MCTS and DRL algorithms in a simulated environment with circular and S-shaped human movement patterns.</p>
+            <table class="report-table">
+                <thead><tr><th>Human Trajectory</th><th>DRL</th><th>MCTS</th><th>MCTS-DRL</th></tr></thead>
+                <tbody>
+                    <tr><td>Circle</td><td>−17.95</td><td>2.87 ± 5.96</td><td>4.53</td></tr>
+                    <tr><td>S-shaped</td><td>−21.84</td><td>−3.83 ± 4.33</td><td>−1.61</td></tr>
+                </tbody>
+            </table>
+            <h4>3.3 Obstacle and Occlusion Avoidance</h4>
+            <div class="trajectory-grid">
+                <div class="trajectory-card"><div class="traj-icon">━━━</div><h5>Straight Path</h5><p>Robot maintained position in front; adjusted path with obstacles to avoid occlusion.</p></div>
+                <div class="trajectory-card"><div class="traj-icon">╭━╯</div><h5>U-Shaped Path</h5><p>Robot adjusted path at ~12s to avoid occlusion rather than navigating around obstacle.</p></div>
+                <div class="trajectory-card"><div class="traj-icon">∿∿∿</div><h5>S-Shaped Path</h5><p>Robot altered course at ~17s to avoid occlusion while maintaining follow-ahead behavior.</p></div>
+                <div class="trajectory-card"><div class="traj-icon">┗━━</div><h5>L-Shaped Corridor</h5><p>Robot adjusted trajectory at corner, turning right to avoid collisions.</p></div>
+            </div>
+            <h4>3.4 SL-MCTS vs Traditional MCTS</h4>
+            <table class="report-table">
+                <thead><tr><th>Metric</th><th>Traditional MCTS</th><th>SL-MCTS</th></tr></thead>
+                <tbody>
+                    <tr><td>Success Rate</td><td>78%</td><td>92%</td></tr>
+                    <tr><td>Average Path Length</td><td>15 steps</td><td>12 steps</td></tr>
+                    <tr><td>Computation Time</td><td>2.4s</td><td>1.3s</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="tab-conclusion" class="report-content">
+            <div class="report-number">04</div>
+            <h3>Conclusion</h3>
+            <p>This study presents a groundbreaking approach for robotic follow-ahead applications, focusing on avoiding collisions and occlusions caused by obstacles in the environment.</p>
+            <div class="conclusion-item"><span class="conclusion-check">✓</span><span>The proposed MCTS-DRL approach outperforms standalone MCTS and DRL algorithms</span></div>
+            <div class="conclusion-item"><span class="conclusion-check">✓</span><span>Effectively follows a target person from the front while maintaining safe distance</span></div>
+            <div class="conclusion-item"><span class="conclusion-check">✓</span><span>Works reliably regardless of whether obstacles are present</span></div>
+            <div class="conclusion-item"><span class="conclusion-check">✓</span><span>Demonstrates potential to improve autonomous robotic navigation</span></div>
+        </div>
+
+        <div id="tab-references" class="report-content">
+            <div class="report-number">05</div>
+            <h3>References</h3>
+            <div class="ref-list">
+                <div class="ref-item">
+                    <div class="ref-num">[1]</div>
+                    <div>
+                        <div class="ref-title">"An MCTS-DRL Based Obstacle and Occlusion Avoidance Methodology in Robotic Follow-Ahead Applications"</div>
+                        <div class="ref-authors">Sahar Leisiazar, Edward J. Park, Angelica Lim and Mo Chen, 2023</div>
+                        <div class="ref-note">Primary source for MCTS-DRL methodology</div>
+                    </div>
+                </div>
+                <div class="ref-item">
+                    <div class="ref-num">[2]</div>
+                    <div>
+                        <div class="ref-title">"A Self-Learning Monte Carlo Tree Search Algorithm for Robot Path Planning"</div>
+                        <div class="ref-authors">Wei Li, Yi Liu, Yan Ma, Kang Xu, Jiang Qiu, Zhongxue Gan. Frontiers in Neurorobotics, 2023</div>
+                        <div class="ref-note">Traditional MCTS flow</div>
+                    </div>
+                </div>
+                <div class="ref-item">
+                    <div class="ref-num">[3]</div>
+                    <div>
+                        <div class="ref-title">"Robust walking control of a lower limb rehabilitation exoskeleton coupled with a musculoskeletal model via deep reinforcement learning"</div>
+                        <div class="ref-note">DRL Algorithm implementation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section id="download">
+    <div class="section-container">
+        <div class="section-label">Download</div>
+        <h2 class="section-title">Access the Full Research Paper</h2>
+        <div class="download-card fade-in">
+            <h3>Team14_Lathi_Sinha_Chatterjee_MonteCarlo.pdf</h3>
+            <div class="download-meta">Final Project Report • EEE598 Fall 2024 • 6 pages</div>
+            <p>Complete research paper including methodology, experimental results, performance comparisons, and future directions for MCTS-DRL in robotic navigation.</p>
+            <div class="download-buttons">
+                <a href="https://github.com/sleepingbomb/MONTE_CARLO_TREE_SEARCH/raw/main/Team14_Lathi_Sinha_Chatterjee_MonteCarlo.pdf" class="btn btn-primary">Download PDF</a>
+                <a href="https://github.com/sleepingbomb/MONTE_CARLO_TREE_SEARCH/blob/main/Team14_Lathi_Sinha_Chatterjee_MonteCarlo.pdf" class="btn btn-secondary">View on GitHub</a>
+            </div>
+            <div class="paper-highlights">
+                <div class="paper-highlight"><span class="ph-num">I</span><span class="ph-text">Introduction to MCTS & Human-Robot Interaction</span></div>
+                <div class="paper-highlight"><span class="ph-num">II</span><span class="ph-text">Challenge: Obstacle & Occlusion Avoidance</span></div>
+                <div class="paper-highlight"><span class="ph-num">III</span><span class="ph-text">MCTS-DRL Integration Methodology</span></div>
+                <div class="paper-highlight"><span class="ph-num">IV</span><span class="ph-text">Experimental Results & Analysis</span></div>
+                <div class="paper-highlight"><span class="ph-num">V</span><span class="ph-text">Future Directions & Improvements</span></div>
+                <div class="paper-highlight"><span class="ph-num">VI</span><span class="ph-text">Conclusion & References</span></div>
+            </div>
+        </div>
+        <a href="https://github.com/sleepingbomb/MONTE_CARLO_TREE_SEARCH" class="repo-link" target="_blank">
+            <div class="repo-name">sleepingbomb/MONTE_CARLO_TREE_SEARCH</div>
+            <div class="repo-desc">View full repository with source code and documentation →</div>
+        </a>
+    </div>
+</section>
+
+<!-- FUTURE -->
+<section style="background:var(--bg-secondary)">
+    <div class="section-container">
+        <div class="section-label">Future Directions</div>
+        <h2 class="section-title">Advancing MCTS-DRL Research</h2>
+        <div class="future-grid">
+            <div class="future-card fade-in"><div class="future-num">01</div><h3>Enhanced Human Intention Prediction</h3><p>Incorporating advanced models like transformers to improve trajectory prediction accuracy and anticipate human behavior more effectively.</p></div>
+            <div class="future-card fade-in"><div class="future-num">02</div><h3>Multi-Agent Scalability</h3><p>Expanding the system for multi-agent environments, enabling collaborative navigation and coordinated decision-making among multiple robots.</p></div>
+            <div class="future-card fade-in"><div class="future-num">03</div><h3>Energy Optimization</h3><p>Enhancing the algorithm's energy efficiency by optimizing computational resource allocation for deployment on edge devices.</p></div>
+            <div class="future-card fade-in"><div class="future-num">04</div><h3>Cross-Domain Versatility</h3><p>Applying the hybrid framework to other domains including autonomous vehicles, drones, and industrial automation systems.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- TEAM -->
+<section id="team" class="team-section">
+    <div class="section-container">
+        <div class="section-label">Research Team</div>
+        <h2 class="section-title">Team 14 — Arizona State University</h2>
+        <div class="team-grid">
+            <div class="team-card fade-in"><div class="team-avatar">SL</div><h3>Sakshi Lathi</h3><a href="mailto:slathi@asu.edu">slathi@asu.edu</a></div>
+            <div class="team-card fade-in"><div class="team-avatar">AS</div><h3>Abhijit Sinha</h3><a href="mailto:asinh117@asu.edu">asinh117@asu.edu</a></div>
+            <div class="team-card fade-in"><div class="team-avatar">AC</div><h3>Anusha Chatterjee</h3><a href="mailto:achatt53@asu.edu">achatt53@asu.edu</a></div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-inner">
+        <div class="footer-logo">MCTS-DRL</div>
+        <div class="footer-info">School of Electrical, Computer, and Energy Engineering<br>Arizona State University — EEE598, Fall 2024</div>
+        <div class="footer-links">
+            <a href="#overview">Overview</a><a href="#stages">Algorithm</a><a href="#applications">Applications</a>
+            <a href="#results">Results</a><a href="#report">Report</a><a href="#download">PDF</a>
+        </div>
+        <div class="footer-copy">© 2024 Team 14. Open source under MIT License.</div>
+    </div>
+</footer>
+
+<script>
+window.addEventListener('scroll',()=>{document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>50)});
+function showTab(name,btn){
+    document.querySelectorAll('.report-content').forEach(el=>el.classList.remove('active'));
+    document.querySelectorAll('.report-tab').forEach(el=>el.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+    btn.classList.add('active');
+}
+const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:.1});
+document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',function(e){e.preventDefault();const t=document.querySelector(this.getAttribute('href'));if(t){t.scrollIntoView({behavior:'smooth'});document.getElementById('navLinks').classList.remove('open')}})});
+</script>
+</body>
+</html>
