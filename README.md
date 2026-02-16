@@ -1,4 +1,4 @@
-# 🌲 Monte Carlo Tree Search (MCTS-DRL) Research
+# 🌲 A hybrid MCTS-DRL pathfinding algorithm designed for safe, predictive human-robot interaction and tracking.
 
 > A heuristic search algorithm for complex decision-making through iterative randomized exploration, integrated with Deep Reinforcement Learning for advanced robotic navigation.
 
